@@ -1,0 +1,8 @@
+{
+  "env": {
+    "amd": true
+  },
+  "rules": {
+    "no-new": 0
+  }
+}

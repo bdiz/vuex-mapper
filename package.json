@@ -1,10 +1,29 @@
 {
   "name": "vuex-mapper",
-  "version": "1.0.0",
-  "description": "ODM for Vuex and firestore.",
-  "main": "src/index.js",
+  "version": "1.0.0-alpha.0",
+  "description": "ODM for Vuex and Firestore",
+  "main": "dist/vuex-mapper.cjs.js",
+  "module": "dist/vuex-mapper.es.js",
+  "unpkg": "dist/vuex-mapper.js",
+  "browser": "dist/vuex-mapper.es.js",
+  "files": [
+    "src",
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
-    "test": "TBD"
+    "lint": "eslint --color --ext=js,html src test examples build",
+    "test": "npm run lint && npm run build",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+    "dev": "npm-watch",
+    "test:unit": "ava",
+    "test:coverage": "nyc npm run test:unit",
+    "dev:test": "npm run test:unit -- --watch",
+    "prebuild": "rimraf dist",
+    "prepublishOnly": "npm run build",
+    "build": "rollit",
+    "release": "npx release-it pre --preReleaseId=alpha --npm.tag=next --github.preRelease"
   },
   "repository": {
     "type": "git",
@@ -13,15 +32,35 @@
   "keywords": [
     "vuex",
     "odm",
+    "fire",
+    "vue",
+    "database",
+    "google",
+    "firebase",
+    "redux",
     "firestore",
-    "object",
-    "data",
-    "mapper"
+    "store"
   ],
-  "author": "Ben Delsol",
+  "author": {
+    "name": "Ben Delsol",
+    "email": "ben.t.delsol@gmail.com"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/bdiz/vuex-mapper/issues"
   },
-  "homepage": "https://github.com/bdiz/vuex-mapper#readme"
+  "homepage": "https://github.com/bdiz/vuex-mapper#readme",
+  "devDependencies": {
+    "babel-preset-env": "^1.6.1",
+    "codecov": "^3.0.1",
+    "eslint": "^4.19.1",
+    "release-it": "^7.4.7",
+    "rimraf": "^2.6.2"
+  },
+  "dependencies": {
+    "camelcase": "^5.0.0",
+    "lodash.kebabcase": "^4.1.1",
+    "pluralize": "^7.0.0",
+    "vuexfire": "^3.0.0-alpha.4"
+  }
 }
