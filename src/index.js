@@ -78,24 +78,15 @@ const registeredDynamicModules = {};
 
 class VuexMapper {
 
-  constructor(parentRequire, { currentTime }) {
-    this.parentRequire = parentRequire;
+  constructor(requireModule, { currentTime }) {
+    this.requireModule = requireModule;
     this.currentTime = currentTime;
-    this.modelRegistration = {};
   }
 
   lookupModel(collectionName) {
     let modelName = pluralize.singular(collectionName);
-    // TODO theres gotta be a way with webpack resolve.modules
-    // https://stackoverflow.com/questions/51327159/allow-dependency-to-require-from-root-package-in-webpack
-    // let fileName = `uvmgen-app/src/store/models/${kebabCase(modelName)}`;
-    // return require(fileName);
-    return this.modelRegistration[modelName];
-  }
-
-  registerModel(collectionName, model) {
-    let modelName = pluralize.singular(collectionName);
-    this.modelRegistration[modelName] = model;
+    let fileName = `./${kebabCase(modelName)}`;
+    return this.requireModule(fileName).default;
   }
 
   vuexModule({name, joinsWith}) {
@@ -248,38 +239,11 @@ class VuexMapper {
     // ie subTask
     let parentPropName = embeddedIn;
 
-    let subcollections = [];
+    let subcollections = embedsMany || [];
 
-    if (embedsMany) {
-      for (let collectionName in embedsMany) {
-        if (embedsMany.hasOwnProperty(collectionName)) {
-          subcollections.push(collectionName);
-          this.registerModel(collectionName, embedsMany[collectionName]);
-        }
-      }
-    }
+    let belongsToReferenceNames = belongsTo || [];
 
-    let belongsToReferenceNames = [];
-
-    if (belongsTo) {
-      for (let referenceName in belongsTo) {
-        if (belongsTo.hasOwnProperty(referenceName)) {
-          belongsToReferenceNames.push(referenceName);
-          this.registerModel(referenceName, belongsTo[referenceName]);
-        }
-      }
-    }
-
-    let habtm = [];
-
-    if (hasAndBelongsToMany) {
-      for (let collectionName in hasAndBelongsToMany) {
-        if (hasAndBelongsToMany.hasOwnProperty(collectionName)) {
-          habtm.push(collectionName);
-          this.registerModel(collectionName, hasAndBelongsToMany[collectionName]);
-        }
-      }
-    }
+    let habtm = hasAndBelongsToMany || [];
 
     let mixin = {
 
@@ -313,7 +277,7 @@ class VuexMapper {
           // get it to recompute once for just the document that gets added/changed?
           // I might have to ditch vuexfire to store state collections as objects
           // with their ids as keys for efficient lookup. In addition not trigger
-          // a double recompute.
+          // a double recompute. Happens even when a doc is just modified (single key stroke)!
           return this.$_documentMixin_moduleFullState[this.collectionName].find((doc) => {
             return doc.id === this.id;
           }) || {}; // state can be empty when things are still loading
@@ -605,19 +569,23 @@ class VuexMapper {
       // strategies might be under the threshold of human lag detection.
       // Also, tracking collections may save on number of transactions /
       // cost of firestore.
-      return store.state[MODULE_NAME][collectionName].map((state) => {
-        return new klass({
-          propsData: {
-            store: store,
-            id: state.id,
-            docRef: this[`${collectionName}Ref`].doc(state.id)
-          }
-        });
-      });
+      return store.state[MODULE_NAME][collectionName];
+      // return store.state[MODULE_NAME][collectionName].map((state) => {
+      //   if (this[`${collectionName}Ref`] !== undefined) {
+      //     return new klass({
+      //       propsData: {
+      //         store: store,
+      //         id: state.id,
+      //         docRef: this[`${collectionName}Ref`].doc(state.id)
+      //       }
+      //     });
+      //   }
+      // })
+      // .filter((obj) => obj);
     };
 
     klass.create = function(doc) {
-      store.dispatch(`${MODULE_NAME}/add`, doc);
+      return store.dispatch(`${MODULE_NAME}/add`, doc);
     };
 
   }
